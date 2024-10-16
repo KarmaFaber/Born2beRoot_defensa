@@ -4,7 +4,7 @@
 arch=$(uname -a)
 
 # CPU PHYSICAL
-cpuf=$(grep -m1 "cpu cores" /proc/cpuinfo | awk '{print $4}')
+cpuf=$(grep "cpu cores" /proc/cpuinfo | uniq | awk '{print $4}')
 
 # CPU VIRTUAL
 cpuv=$(grep -c ^processor /proc/cpuinfo)
@@ -12,23 +12,23 @@ cpuv=$(grep -c ^processor /proc/cpuinfo)
 # RAM
 fram=$(free -m | awk '$1 == "Mem:" {print $2}')
 uram=$(free -m | awk '$1 == "Mem:" {print $3}')
-pram=$(free -m | awk '$1 == "Mem:" {printf("%.2f", $3/$2*100)}')
+pram=$(free | awk '$1 == "Mem:" {printf("%.2f"), $3/$2*100}')
 
 # DISK
-fdisc=$(df -m --total | awk '/^total/ {print $2}')
-udisc=$(df -m --total | awk '/^total/ {print $3}')
-pdisc=$(df -m --total | awk '/^total/ {print $5}')
+disk_total=$(df -m | grep "/dev/" | grep -v "/boot" | awk '{disk_t += $2} END {printf ("%.1fGb\n"), disk_t/1024}')
+disk_use=$(df -m | grep "/dev/" | grep -v "/boot" | awk '{disk_u += $3} END {print disk_u}')
+disk_percent=$(df -m | grep "/dev/" | grep -v "/boot" | awk '{disk_u += $3} {disk_t+= $2} END {printf("%d"), disk_u/disk_t*100}')
 
 # CPU LOAD
-cpul=$(uptime | awk -F'load average:' '{print $2}' | cut -d, -f1)
+cpul=$(top -bn1 | grep '^%Cpu' | cut -c 9- | xargs | awk '{printf("%.1f%%"), $1 + $3}')
 
 # LAST BOOT
 lb=$(who -b | awk '$1 == "system" {print $3 " " $4}')
 
 # LVM USE
-lvm=$(lsblk | grep -q lvm && echo "Yes" || echo "No")
+lvm=$(lsblk | grep lvm | awk '{if ($1) {print "Yes";exit;} else {print "No"}}')
 
-# TCP CONNECTIONS
+# TCP CONNEXIONS
 tcpc=$(ss -ta | grep ESTAB | wc -l)
 
 # USER LOG
@@ -41,18 +41,17 @@ mac=$(ip link | grep "link/ether" | awk '{print $2}')
 # SUDO
 cmndsudo=$(journalctl -q _COMM=sudo | grep COMMAND | wc -l)
 
-# Display the system information
-wall "
-	Architecture: $arch
+wall "	
+    	Architecture: $arch
 	CPU Physical: $cpuf
 	CPU Virtual: $cpuv
 	Memory Usage: $uram/${fram}MB ($pram%)
-	Disk Usage: $udisc/${fdisc} ($pdisc)
-	CPU Load: $cpul
+	Disk Usage: $disk_use/${disk_total} ($disk_percent%)
+	CPU load: $cpul%
 	Last boot: $lb
 	LVM use: $lvm
-	Connections TCP: $tcpc ESTABLISHED
+	Connections TCP: $tcpc ESPABLISHED
 	User log: $user
 	Network: IP $ip ($mac)
 	Sudo: $cmndsudo cmd
-"
+    "
