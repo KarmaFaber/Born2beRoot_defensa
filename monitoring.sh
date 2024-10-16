@@ -15,9 +15,9 @@ uram=$(free -m | awk '$1 == "Mem:" {print $3}')
 pram=$(free -m | awk '$1 == "Mem:" {printf("%.2f", $3/$2*100)}')
 
 # DISK
-fdisc=$(df -h --total | awk '/^total/ {print $2}')
-udisc=$(df -h --total | awk '/^total/ {print $3}')
-pdisc=$(df -h --total | awk '/^total/ {print $5}')
+fdisc=$(df -m --total | awk '/^total/ {print $2}')
+udisc=$(df -m --total | awk '/^total/ {print $3}')
+pdisc=$(df -m --total | awk '/^total/ {print $5}')
 
 # CPU LOAD
 cpul=$(uptime | awk -F'load average:' '{print $2}' | cut -d, -f1)
